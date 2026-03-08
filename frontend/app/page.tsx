@@ -1,65 +1,216 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useRef, useCallback } from "react";
+import AgentGraph from "./components/AgentGraph";
+import LogPanel from "./components/LogPanel";
+import JudgmentPanel from "./components/JudgmentPanel";
+
+export type ToolTrace = {
+  name: string;
+  input?: Record<string, unknown>;
+  output?: Record<string, unknown>;
+  status: string;
+  evidence_id?: string;
+};
+
+export type AgentEvent = {
+  type: string;
+  run_id?: string;
+  company?: string;
+  agent?: string;
+  status?: string;
+  message?: string;
+  phase?: string;
+  elapsed?: number;
+  timestamp?: string;
+  tool?: ToolTrace;
+  judgment?: {
+    signal: string;
+    confidence: number;
+    thesis: { claim: string; evidence_ids: string[] }[];
+    risks: { claim: string; evidence_ids: string[] }[];
+    summary: string;
+  };
+};
+
+export type AgentState = {
+  id: string;
+  label: string;
+  status: "idle" | "running" | "completed";
+  messages: string[];
+  tools: ToolTrace[];
+  currentTool?: ToolTrace;
+};
+
+const AGENT_CONFIG: Record<string, string> = {
+  orchestrator: "Orchestrator",
+  news: "News Agent",
+  ir: "IR Agent",
+  financial: "Financial Agent",
+  satellite: "Satellite Agent",
+};
 
 export default function Home() {
+  const [company, setCompany] = useState("");
+  const [isRunning, setIsRunning] = useState(false);
+  const [agents, setAgents] = useState<Record<string, AgentState>>({});
+  const [logs, setLogs] = useState<AgentEvent[]>([]);
+  const [judgment, setJudgment] = useState<AgentEvent["judgment"] | null>(null);
+  const [highlightedEvidence, setHighlightedEvidence] = useState<string[]>([]);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const initAgents = useCallback(() => {
+    const initial: Record<string, AgentState> = {};
+    for (const [id, label] of Object.entries(AGENT_CONFIG)) {
+      initial[id] = { id, label, status: "idle", messages: [], tools: [] };
+    }
+    return initial;
+  }, []);
+
+  const startAnalysis = useCallback(async () => {
+    if (!company.trim() || isRunning) return;
+
+    setIsRunning(true);
+    setJudgment(null);
+    setLogs([]);
+    setHighlightedEvidence([]);
+    const agentStates = initAgents();
+    setAgents(agentStates);
+
+    abortRef.current = new AbortController();
+
+    try {
+      const res = await fetch(
+        `http://localhost:8000/api/analyze/${encodeURIComponent(company.trim())}`,
+        { signal: abortRef.current.signal }
+      );
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) return;
+
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          const dataLine = line.replace(/^data: /, "").trim();
+          if (!dataLine) continue;
+
+          try {
+            const event: AgentEvent = JSON.parse(dataLine);
+            setLogs((prev) => [...prev, event]);
+
+            if (event.type === "agent_event" && event.agent) {
+              setAgents((prev) => {
+                const prevAgent = prev[event.agent!];
+                const newTools = event.tool
+                  ? [...(prevAgent?.tools || []), event.tool]
+                  : prevAgent?.tools || [];
+                return {
+                  ...prev,
+                  [event.agent!]: {
+                    ...prevAgent,
+                    status: event.status as AgentState["status"],
+                    messages: [...(prevAgent?.messages || []), event.message || ""],
+                    tools: newTools,
+                    currentTool: event.tool || prevAgent?.currentTool,
+                  },
+                };
+              });
+
+              if (event.judgment) {
+                setJudgment(event.judgment);
+              }
+            }
+          } catch {}
+        }
+      }
+    } catch (e: unknown) {
+      if (e instanceof Error && e.name !== "AbortError") {
+        console.error("SSE error:", e);
+      }
+    } finally {
+      setIsRunning(false);
+    }
+  }, [company, isRunning, initAgents]);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen bg-[#0a0a0f] text-zinc-200">
+      {/* Header */}
+      <header className="border-b border-zinc-800 px-6 py-4">
+        <div className="mx-auto flex max-w-7xl items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-sm font-bold text-black">
+              JA
+            </div>
+            <h1 className="text-lg font-semibold tracking-tight">
+              JapanAlpha<span className="text-zinc-500 font-normal ml-2 text-sm">Mission Control</span>
+            </h1>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-zinc-500">
+            <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
+            System Online
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+      </header>
+
+      {/* Search Bar */}
+      <div className="border-b border-zinc-800 px-6 py-5">
+        <div className="mx-auto max-w-7xl">
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && startAnalysis()}
+              placeholder="Enter company name (e.g. Toyota Motor)"
+              className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 placeholder-zinc-500 outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-colors"
+              disabled={isRunning}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <button
+              onClick={startAnalysis}
+              disabled={isRunning || !company.trim()}
+              className="rounded-lg bg-emerald-600 px-6 py-3 text-sm font-medium text-white transition-all hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {isRunning ? "Analyzing..." : "Analyze"}
+            </button>
+          </div>
         </div>
-      </main>
+      </div>
+
+      {/* Main Content */}
+      <div className="mx-auto max-w-7xl px-6 py-6">
+        {Object.keys(agents).length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-32 text-zinc-500">
+            <div className="text-6xl mb-6 opacity-30">&#x1F50D;</div>
+            <p className="text-lg">Enter a company name to start agent analysis</p>
+            <p className="text-sm mt-2 text-zinc-600">AI agents will collect and analyze data in real-time</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left: Agent Graph + Judgment */}
+            <div className="lg:col-span-2">
+              <AgentGraph agents={agents} highlightedEvidence={highlightedEvidence} />
+              {judgment && (
+                <JudgmentPanel
+                  judgment={judgment}
+                  onEvidenceHover={setHighlightedEvidence}
+                />
+              )}
+            </div>
+            {/* Right: Log Panel */}
+            <div className="lg:col-span-1">
+              <LogPanel logs={logs} highlightedEvidence={highlightedEvidence} />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
