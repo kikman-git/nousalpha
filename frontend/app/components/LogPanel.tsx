@@ -14,6 +14,9 @@ const AGENT_COLORS: Record<string, string> = {
   company: "text-yellow-400",
   news: "text-emerald-400",
   satellite: "text-pink-400",
+  bull: "text-green-400",
+  bear: "text-red-400",
+  judge: "text-orange-400",
 };
 
 export default function LogPanel({ logs, highlightedEvidence }: Props) {

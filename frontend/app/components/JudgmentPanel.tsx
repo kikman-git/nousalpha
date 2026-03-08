@@ -13,6 +13,12 @@ type Judgment = {
   thesis: ThesisItem[];
   risks: ThesisItem[];
   summary: string;
+  debate_summary?: {
+    rounds: number;
+    bull_score: string;
+    bear_score: string;
+    verdict_basis: string;
+  };
 };
 
 type Props = {
@@ -46,8 +52,28 @@ export default function JudgmentPanel({ judgment, onEvidenceHover }: Props) {
             <span className="text-xs text-zinc-400">Confidence {judgment.confidence}%</span>
           </div>
         </div>
-        <span className="text-[10px] text-zinc-500 uppercase tracking-wider">Long-Term Hold Signal</span>
+        <span className="text-[10px] text-zinc-500 uppercase tracking-wider">Judge's Verdict</span>
       </div>
+
+      {/* Debate Summary */}
+      {judgment.debate_summary && (
+        <div className="mb-4 p-3 rounded-lg bg-zinc-900/50 border border-zinc-800">
+          <div className="text-[10px] font-semibold text-orange-400 uppercase tracking-wider mb-2">Debate Outcome</div>
+          <div className="grid grid-cols-2 gap-3 text-[11px]">
+            <div>
+              <span className="text-green-400 font-semibold">Bull: </span>
+              <span className="text-zinc-400">{judgment.debate_summary.bull_score}</span>
+            </div>
+            <div>
+              <span className="text-red-400 font-semibold">Bear: </span>
+              <span className="text-zinc-400">{judgment.debate_summary.bear_score}</span>
+            </div>
+          </div>
+          <div className="text-[11px] text-zinc-500 mt-2">
+            <span className="text-zinc-400">Basis: </span>{judgment.debate_summary.verdict_basis}
+          </div>
+        </div>
+      )}
 
       {/* Summary */}
       <p className="text-sm text-zinc-300 leading-relaxed mb-5">{judgment.summary}</p>

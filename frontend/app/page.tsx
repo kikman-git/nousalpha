@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import AgentGraph from "./components/AgentGraph";
+import DebatePanel from "./components/DebatePanel";
 import LogPanel from "./components/LogPanel";
 import JudgmentPanel from "./components/JudgmentPanel";
 
@@ -11,6 +12,15 @@ export type ToolTrace = {
   output?: Record<string, unknown>;
   status: string;
   evidence_id?: string;
+};
+
+export type DebateArgument = {
+  position: "bull" | "bear" | "judge";
+  round: number;
+  text: string;
+  evidence_ids?: string[];
+  strength?: number;
+  ruling?: "continue" | "deliberating" | "verdict";
 };
 
 export type AgentEvent = {
@@ -24,12 +34,20 @@ export type AgentEvent = {
   elapsed?: number;
   timestamp?: string;
   tool?: ToolTrace;
+  debate_round?: number;
+  argument?: DebateArgument;
   judgment?: {
     signal: string;
     confidence: number;
     thesis: { claim: string; evidence_ids: string[] }[];
     risks: { claim: string; evidence_ids: string[] }[];
     summary: string;
+    debate_summary?: {
+      rounds: number;
+      bull_score: string;
+      bear_score: string;
+      verdict_basis: string;
+    };
   };
 };
 
@@ -48,6 +66,9 @@ const AGENT_CONFIG: Record<string, string> = {
   company: "Company Agent",
   news: "News Agent",
   satellite: "Satellite Agent",
+  bull: "Bull Agent",
+  bear: "Bear Agent",
+  judge: "Judge",
 };
 
 export default function Home() {
@@ -57,6 +78,7 @@ export default function Home() {
   const [logs, setLogs] = useState<AgentEvent[]>([]);
   const [judgment, setJudgment] = useState<AgentEvent["judgment"] | null>(null);
   const [highlightedEvidence, setHighlightedEvidence] = useState<string[]>([]);
+  const [debateEvents, setDebateEvents] = useState<AgentEvent[]>([]);
   const abortRef = useRef<AbortController | null>(null);
 
   const initAgents = useCallback(() => {
@@ -73,6 +95,7 @@ export default function Home() {
     setIsRunning(true);
     setJudgment(null);
     setLogs([]);
+    setDebateEvents([]);
     setHighlightedEvidence([]);
     const agentStates = initAgents();
     setAgents(agentStates);
@@ -124,6 +147,9 @@ export default function Home() {
                 };
               });
 
+              if (event.argument) {
+                setDebateEvents((prev) => [...prev, event]);
+              }
               if (event.judgment) {
                 setJudgment(event.judgment);
               }
@@ -197,6 +223,13 @@ export default function Home() {
             {/* Left: Agent Graph + Judgment */}
             <div className="lg:col-span-2">
               <AgentGraph agents={agents} highlightedEvidence={highlightedEvidence} />
+              {debateEvents.length > 0 && (
+                <DebatePanel
+                  events={debateEvents}
+                  highlightedEvidence={highlightedEvidence}
+                  onEvidenceHover={setHighlightedEvidence}
+                />
+              )}
               {judgment && (
                 <JudgmentPanel
                   judgment={judgment}

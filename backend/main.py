@@ -165,36 +165,81 @@ def get_mock_events(company: str) -> list[dict]:
         {"agent": "satellite", "status": "completed", "message": "Geospatial analysis complete: Strong physical signals — office expansion and event traffic",
          "phase": "done", "delay": 0.4},
 
-        # ── Phase 6: Orchestrator synthesizes ──
+        # ── Phase 6: Orchestrator synthesizes and hands off to debate ──
         {"agent": "orchestrator", "status": "running", "message": "Aggregating results from all agents...", "phase": "synthesize", "delay": 1.0},
-        {"agent": "orchestrator", "status": "running", "message": "Cross-referencing evidence across 4 data sources...", "phase": "synthesize", "delay": 1.5},
+        {"agent": "orchestrator", "status": "running", "message": "Cross-referencing evidence across 4 data sources...", "phase": "synthesize", "delay": 1.0},
+        {"agent": "orchestrator", "status": "completed", "message": "Evidence package compiled. Initiating adversarial debate...", "phase": "synthesize", "delay": 0.5},
 
-        # ── Phase 7: Final BUY signal with evidence chain ──
-        {"agent": "orchestrator", "status": "completed", "message": "Analysis complete", "phase": "judgment", "delay": 0.5,
+        # ══════════════════════════════════════════════════════════
+        # ── Phase 7: ADVERSARIAL DEBATE — Bull vs Bear + Judge ──
+        # ══════════════════════════════════════════════════════════
+
+        {"agent": "judge", "status": "running", "message": "Debate session opened. Bull and Bear agents, present your cases.", "phase": "debate", "debate_round": 0, "delay": 0.8,
+         "argument": {"position": "judge", "round": 0, "text": "I will evaluate the investment case for Akatsuki Inc. (3932.T). Bull, you may begin.", "ruling": "continue"}},
+
+        # ── Round 1 ──
+        {"agent": "bull", "status": "running", "message": "Kaiju No.8 proves the IP monetization engine works — JPY 2B+ in month one, 40% overseas", "phase": "debate", "debate_round": 1, "delay": 1.0,
+         "argument": {"position": "bull", "round": 1, "text": "The Kaiju No.8 game launch validates Akatsuki's core thesis: they can monetize IP at scale globally. JPY 2B+ revenue in the first month with 40% overseas ratio demonstrates genuine international demand, not just domestic hype.", "evidence_ids": ["ev-co-3", "ev-ir-2"], "strength": 0.85}},
+
+        {"agent": "bear", "status": "running", "message": "One hit game does not make a sustainable business — existing titles are declining YoY", "phase": "debate", "debate_round": 1, "delay": 1.0,
+         "argument": {"position": "bear", "round": 1, "text": "Mobile gaming is a hit-driven business. Existing titles showed YoY revenue decline in Q1. Kaiju No.8 is a single title — this is classic single-game dependency risk. Meanwhile, the Papabubble candy acquisition signals management distraction from core competency.", "evidence_ids": ["ev-ir-2", "ev-ir-3"], "strength": 0.72}},
+
+        {"agent": "judge", "status": "running", "message": "Both points noted. Bull's IP thesis is data-backed. Bear raises valid concentration risk.", "phase": "debate", "debate_round": 1, "delay": 0.6,
+         "argument": {"position": "judge", "round": 1, "text": "Bull presents strong evidence of IP monetization capability. Bear correctly identifies single-title concentration risk. Bull — address the legacy title revenue decline.", "ruling": "continue"}},
+
+        # ── Round 2 ──
+        {"agent": "bull", "status": "running", "message": "The 3-segment pivot IS the answer to concentration risk — plus satellite confirms physical expansion", "phase": "debate", "debate_round": 2, "delay": 1.0,
+         "argument": {"position": "bull", "round": 2, "text": "The restructuring to 3 segments (Game/Comic, Entertainment/Lifestyle, AI-DX) directly addresses concentration risk. This is not just gaming anymore. Furthermore, satellite imagery independently confirms physical expansion — new building signage at HQ and 3,200 daily visitors at Kaiju No.8 pop-ups. You cannot fake satellite data.", "evidence_ids": ["ev-ir-3", "ev-sat-2", "ev-sat-3"], "strength": 0.88}},
+
+        {"agent": "bear", "status": "running", "message": "Three simultaneous strategic shifts multiply execution risk — unproven segments", "phase": "debate", "debate_round": 2, "delay": 1.0,
+         "argument": {"position": "bear", "round": 2, "text": "Diversification on paper is not diversification in practice. AI-DX Solutions is unproven. Papabubble is a candy company — the synergy thesis is speculative. Two M&A integrations entering consolidation in H2 with no proven contribution yet. Management is spreading too thin across 3 strategic bets simultaneously.", "evidence_ids": ["ev-ir-3", "ev-co-3"], "strength": 0.68}},
+
+        {"agent": "judge", "status": "running", "message": "Satellite evidence is compelling — hard to argue against physical signals. But M&A integration risk is real.", "phase": "debate", "debate_round": 2, "delay": 0.6,
+         "argument": {"position": "judge", "round": 2, "text": "Bull's satellite evidence is particularly compelling — alternative data that cannot be manipulated through traditional disclosure. However, Bear raises a legitimate point about execution risk across multiple strategic bets. Final round — closing arguments.", "ruling": "continue"}},
+
+        # ── Round 3 (Final) ──
+        {"agent": "bull", "status": "running", "message": "19 VC exits, DOE raised to 4%, METI tailwind, convergent evidence across ALL 4 data sources", "phase": "debate", "debate_round": 3, "delay": 1.0,
+         "argument": {"position": "bull", "round": 3, "text": "The investment case is supported by convergent evidence across all 4 independent data sources — not just one. 19 cumulative VC exits including 4 IPOs prove capital allocation skill. DOE raised to 4% shows shareholder alignment. METI's JPY 500B content export policy is a direct tailwind. Management's 0.81 confidence score in tone analysis shows genuine conviction, not scripted optimism.", "evidence_ids": ["ev-ir-2", "ev-nw-2", "ev-co-3", "ev-nw-3"], "strength": 0.90}},
+
+        {"agent": "bear", "status": "running", "message": "The valuation already prices in growth — downside risk is asymmetric if Kaiju No.8 fades", "phase": "debate", "debate_round": 3, "delay": 1.0,
+         "argument": {"position": "bear", "round": 3, "text": "I acknowledge the multi-source evidence is strong. But the market is not blind — positive sentiment is already reflected in the price. If Kaiju No.8 revenue decays at typical mobile game rates, the entire growth narrative collapses. The BOJ rate environment may not hold. I maintain this is a HOLD at best, not a BUY.", "evidence_ids": ["ev-co-3", "ev-nw-3", "ev-ir-2"], "strength": 0.60}},
+
+        {"agent": "judge", "status": "running", "message": "Closing arguments received. Deliberating...", "phase": "debate", "debate_round": 3, "delay": 1.5,
+         "argument": {"position": "judge", "round": 3, "text": "Both counselors have presented their cases. Reviewing all evidence and arguments...", "ruling": "deliberating"}},
+
+        # ── Phase 8: Judge's Verdict ──
+        {"agent": "judge", "status": "completed", "message": "VERDICT: BUY — Bull's multi-source convergent evidence outweighs Bear's execution risk concerns", "phase": "verdict", "debate_round": 3, "delay": 1.0,
+         "argument": {"position": "judge", "round": 3, "ruling": "verdict"},
          "judgment": {
              "signal": "BUY",
-             "confidence": 79,
+             "confidence": 74,
              "thesis": [
-                 {"claim": "Kaiju No.8 The Game achieved JPY 2B+ revenue in first month with 40% overseas ratio — validates IP monetization capability",
+                 {"claim": "Kaiju No.8 validates IP monetization at scale (JPY 2B+, 40% overseas) — Bull's core thesis is well-evidenced",
                   "evidence_ids": ["ev-co-3", "ev-ir-2"]},
-                 {"claim": "Strategic pivot to 3-segment model (Game/Comic, Entertainment/Lifestyle, AI-DX) creates diversified growth engine beyond mobile gaming",
+                 {"claim": "3-segment restructuring provides strategic diversification, though execution remains to be proven",
                   "evidence_ids": ["ev-ir-3", "ev-co-2"]},
-                 {"claim": "Active M&A strategy (Papabubble acquisition) combining real-world retail with digital IP — management conviction confirmed in earnings call tone analysis (0.81 confidence)",
-                  "evidence_ids": ["ev-co-3", "ev-ir-3"]},
-                 {"claim": "19 cumulative VC exits including 4 IPOs in 2 years — investment/incubation portfolio generating consistent liquidity events (JPY 1.8B in H1)",
-                  "evidence_ids": ["ev-ir-2", "ev-nw-3"]},
-                 {"claim": "METI content export policy (JPY 500B target) directly benefits Akatsuki's IP-driven business model",
-                  "evidence_ids": ["ev-nw-2", "ev-nw-1"]},
-                 {"claim": "Satellite imagery confirms office expansion (new adjacent building signage) and Kaiju No.8 pop-up driving 3,200 visitors/day — physical signals corroborate digital momentum",
+                 {"claim": "Satellite data independently confirms physical expansion signals — this alternative data cannot be manipulated through traditional channels",
                   "evidence_ids": ["ev-sat-2", "ev-sat-3"]},
+                 {"claim": "19 VC exits (4 IPOs in 2 years) demonstrate strong capital allocation track record",
+                  "evidence_ids": ["ev-ir-2", "ev-nw-3"]},
+                 {"claim": "METI content export policy (JPY 500B) provides macro tailwind for IP-driven business model",
+                  "evidence_ids": ["ev-nw-2", "ev-nw-1"]},
              ],
              "risks": [
-                 {"claim": "Mobile gaming market remains challenging — existing titles showed YoY revenue decline in Q1; recovery in Q2 was partial",
+                 {"claim": "Bear correctly identifies single-title concentration risk — monitor Kaiju No.8 revenue retention closely",
                   "evidence_ids": ["ev-ir-2", "ev-co-3"]},
-                 {"claim": "M&A integration risk — 2 new acquisitions entering consolidation in H2; contribution to group earnings remains unproven",
+                 {"claim": "M&A integration of 2 acquisitions in H2 represents execution risk — Bear's point on management bandwidth is valid",
                   "evidence_ids": ["ev-ir-3", "ev-co-3"]},
+                 {"claim": "BOJ rate environment uncertainty — Bear's macro concern noted for monitoring",
+                  "evidence_ids": ["ev-nw-3"]},
              ],
-             "summary": f"{company} presents a compelling transformation story supported by convergent evidence across 4 independent data sources. EDINET filings show solid Q2 fundamentals (JPY 7.6B revenue, JPY 3.0B net income) with a strategic pivot to a 3-segment model. Whisper-transcribed earnings call from YouTube reveals management confidence with explicit growth guidance and aggressive M&A posture. Macro policy tailwinds from METI's content export initiative and favorable BOJ rate environment support the strategy. Most distinctively, satellite imagery independently confirms physical expansion signals — new building signage at HQ and high foot traffic at Kaiju No.8 promotional events (est. 3,200 visitors/day) — providing alternative data that corroborates the company's growth narrative. We issue a BUY signal with 79% confidence for long-term holding.",
+             "summary": f"After adversarial debate, I rule in favor of BULL with a BUY signal at 74% confidence. The confidence is tempered from the initial 79% due to Bear's valid points on execution risk and single-title dependency. However, the convergent evidence across 4 independent data sources — EDINET filings, Whisper-transcribed earnings calls, government policy analysis, and satellite imagery — provides a level of conviction that single-source analysis cannot achieve. The satellite data independently confirming physical expansion is particularly compelling as it represents alternative data that cannot be manipulated. Bear's concerns about M&A integration and Kaiju No.8 revenue sustainability are incorporated as key monitoring items.",
+             "debate_summary": {
+                 "rounds": 3,
+                 "bull_score": "Strong (convergent multi-source evidence, satellite confirmation)",
+                 "bear_score": "Moderate (valid execution risk, but weakened by lack of counter-evidence to satellite data)",
+                 "verdict_basis": "Multi-source evidence convergence outweighs execution risk concerns",
+             },
          }},
     ]
 
