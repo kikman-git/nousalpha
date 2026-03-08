@@ -9,10 +9,10 @@ type Props = {
 
 const CENTER_X = 500;
 const CHILD_POSITIONS = [
-  { id: "news", x: 125, color: "#22c55e", label: "News Agent" },
-  { id: "ir", x: 375, color: "#06b6d4", label: "IR Agent" },
-  { id: "financial", x: 625, color: "#8b5cf6", label: "Financial Agent" },
-  { id: "satellite", x: 875, color: "#ec4899", label: "Satellite Agent" },
+  { id: "ir", x: 125, color: "#06b6d4", label: "IR / Filings" },
+  { id: "audio", x: 375, color: "#f59e0b", label: "Audio / Transcripts" },
+  { id: "macro", x: 625, color: "#22c55e", label: "Macro / Policy" },
+  { id: "satellite", x: 875, color: "#ec4899", label: "Geospatial" },
 ];
 
 function flattenObj(obj: Record<string, unknown>): string[] {

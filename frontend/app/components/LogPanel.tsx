@@ -10,9 +10,9 @@ type Props = {
 
 const AGENT_COLORS: Record<string, string> = {
   orchestrator: "text-amber-400",
-  news: "text-emerald-400",
   ir: "text-cyan-400",
-  financial: "text-violet-400",
+  audio: "text-yellow-400",
+  macro: "text-emerald-400",
   satellite: "text-pink-400",
 };
 
