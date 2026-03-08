@@ -8,7 +8,7 @@ import time
 import uuid
 from datetime import datetime
 
-app = FastAPI(title="JapanAlpha Mission Control API")
+app = FastAPI(title="Origin Mission Control API")
 
 app.add_middleware(
     CORSMiddleware,

@@ -1,5 +1,5 @@
 """
-JapanAlpha MVP - Trace Database
+Origin MVP - Trace Database
 Stores Agentic Decision Traces for the "Explainability by Design" UI.
 """
 

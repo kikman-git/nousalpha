@@ -661,7 +661,7 @@ async def get_full_fundamental_report(
     return report
 
 
-# ─── JapanAlpha Multi-Agent Tools ────────────────────────────────────────────
+# ─── Origin Multi-Agent Tools ────────────────────────────────────────────────
 
 @mcp.tool()
 def get_regulatory_filing_section(ticker: str, year: int, section: str = "Risk Factors", jurisdiction: str = "US") -> dict:

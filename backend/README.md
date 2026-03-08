@@ -1,6 +1,6 @@
-# JapanAlpha Backend
+# Origin Backend
 
-The backend for the JapanAlpha Mission Control platform.
+The backend for the Origin Mission Control platform.
 
 ## Setup
 

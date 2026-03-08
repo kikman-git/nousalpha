@@ -1,14 +1,10 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useState, useRef, useCallback, useEffect } from "react";
-import AgentGraph from "./components/AgentGraph";
-import DebatePanel from "./components/DebatePanel";
 import LogPanel from "./components/LogPanel";
-import DataSourcesPanel from "./components/DataSourcesPanel";
 import PredictionDashboard from "./components/PredictionDashboard";
-
-const Verdict3D = dynamic(() => import("./components/Verdict3D"), { ssr: false });
+import AgentFlowWithSources from "./components/AgentFlowWithSources";
+import GroupedSourcesPanel from "./components/GroupedSourcesPanel";
 
 export type ToolTrace = {
   name: string;
@@ -85,38 +81,22 @@ const AGENT_CONFIG: Record<string, string> = {
   judge: "Judge",
 };
 
+
 export default function Home() {
   const [company, setCompany] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [agents, setAgents] = useState<Record<string, AgentState>>({});
   const [logs, setLogs] = useState<AgentEvent[]>([]);
   const [judgment, setJudgment] = useState<AgentEvent["judgment"] | null>(null);
-  const [highlightedEvidence, setHighlightedEvidence] = useState<string[]>([]);
-  const [debateEvents, setDebateEvents] = useState<AgentEvent[]>([]);
   const abortRef = useRef<AbortController | null>(null);
-  const scrollAnchorRef = useRef<HTMLDivElement>(null);
-  const userScrolledUp = useRef(false);
+  const flowRef = useRef<HTMLDivElement>(null);
 
-  // Detect if user scrolled up — pause auto-scroll
+  // Scroll to the agent flow graph when orchestration starts
   useEffect(() => {
-    const onScroll = () => {
-      const scrollBottom = window.innerHeight + window.scrollY;
-      const docHeight = document.documentElement.scrollHeight;
-      userScrolledUp.current = docHeight - scrollBottom > 300;
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  // Auto-scroll to latest content
-  useEffect(() => {
-    if (!isRunning && !judgment) return;
-    if (userScrolledUp.current) return;
-    const timer = setTimeout(() => {
-      scrollAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [logs.length, debateEvents.length, judgment, isRunning]);
+    if (isRunning && flowRef.current) {
+      flowRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [isRunning]);
 
   const initAgents = useCallback(() => {
     const initial: Record<string, AgentState> = {};
@@ -126,17 +106,12 @@ export default function Home() {
     return initial;
   }, []);
 
-  const allTools = Object.values(agents).flatMap((a) => a.tools);
-
   const startAnalysis = useCallback(async () => {
     if (!company.trim() || isRunning) return;
 
     setIsRunning(true);
     setJudgment(null);
     setLogs([]);
-    setDebateEvents([]);
-    setHighlightedEvidence([]);
-    userScrolledUp.current = false;
     const agentStates = initAgents();
     setAgents(agentStates);
 
@@ -187,9 +162,6 @@ export default function Home() {
                 };
               });
 
-              if (event.argument) {
-                setDebateEvents((prev) => [...prev, event]);
-              }
               if (event.judgment) {
                 setJudgment(event.judgment);
               }
@@ -213,10 +185,10 @@ export default function Home() {
         <div className="mx-auto flex max-w-[1400px] items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-sm font-black text-black shadow-lg shadow-emerald-500/20">
-              JA
+              OR
             </div>
             <h1 className="text-lg font-bold tracking-tight">
-              JapanAlpha<span className="text-zinc-600 font-normal ml-2 text-sm">AI Hedge Fund</span>
+              Origin<span className="text-zinc-600 font-normal ml-2 text-sm">AI Hedge Fund</span>
             </h1>
           </div>
           <div className="flex items-center gap-2 text-xs text-zinc-500">
@@ -256,43 +228,66 @@ export default function Home() {
           <div className="flex flex-col items-center justify-center py-32 text-zinc-500">
             <div className="text-7xl mb-6 opacity-20">&#x1F50D;</div>
             <p className="text-lg font-medium text-zinc-400">Enter a company name to start agent analysis</p>
-            <p className="text-sm mt-2 text-zinc-600">8 AI agents will collect and debate in real-time</p>
+            <p className="text-sm mt-2 text-zinc-600">8 AI agents debate to generate Alpha / Beta projections</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Left: Agent Flow + Debate + Verdict + Dashboard — 3 cols */}
-            <div className="lg:col-span-3 space-y-4">
-              <AgentGraph agents={agents} highlightedEvidence={highlightedEvidence} />
 
-              {debateEvents.length > 0 && (
-                <DebatePanel
-                  events={debateEvents}
-                  highlightedEvidence={highlightedEvidence}
-                  onEvidenceHover={setHighlightedEvidence}
-                />
-              )}
+            {/* ── ORCHESTRATION STATE: combined flow + sources ── */}
+            {!judgment && (
+              <>
+                <div ref={flowRef} className="lg:col-span-3">
+                  <AgentFlowWithSources agents={agents} />
+                </div>
+                <div className="lg:col-span-1">
+                  <LogPanel logs={logs} />
+                </div>
+              </>
+            )}
 
-              {judgment && (
-                <>
-                  <Verdict3D signal={judgment.signal} confidence={judgment.confidence} />
+            {/* ── REPORT STATE: dashboard + grouped sources + log ── */}
+            {judgment && (
+              <>
+                <div className="lg:col-span-3 space-y-4">
+                  {/* Collapsible agent flow recap */}
+                  <details className="group rounded-xl border border-zinc-800 bg-zinc-950/60 overflow-hidden">
+                    <summary className="flex items-center justify-between px-4 py-2.5 cursor-pointer select-none hover:bg-zinc-800/20 transition-colors list-none">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Analysis Flow</span>
+                        <span className="text-[9px] text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded font-medium">Complete</span>
+                      </div>
+                      <span className="text-[10px] text-zinc-500 group-open:hidden">▼ Show</span>
+                      <span className="text-[10px] text-zinc-500 hidden group-open:block">▲ Hide</span>
+                    </summary>
+                    <div className="border-t border-zinc-800/50 p-4">
+                      <AgentFlowWithSources agents={agents} />
+                    </div>
+                  </details>
+
+                  {/* Alpha / Beta report */}
                   <PredictionDashboard
+                    company={company}
                     signal={judgment.signal}
                     confidence={judgment.confidence}
+                    summary={judgment.summary}
+                    thesis={judgment.thesis}
+                    risks={judgment.risks}
+                    debate_summary={judgment.debate_summary}
                     alpha={judgment.alpha}
                     beta={judgment.beta}
                   />
-                </>
-              )}
-            </div>
+                </div>
 
-            {/* Right sidebar: Sources + Log — 1 col */}
-            <div className="lg:col-span-1 space-y-4">
-              <DataSourcesPanel tools={allTools} />
-              <LogPanel logs={logs} highlightedEvidence={highlightedEvidence} />
-            </div>
+                {/* Sidebar: grouped sources + log */}
+                <div className="lg:col-span-1 space-y-4">
+                  <GroupedSourcesPanel agents={agents} />
+                  <LogPanel logs={logs} />
+                </div>
+              </>
+            )}
+
           </div>
         )}
-        <div ref={scrollAnchorRef} />
       </div>
     </div>
   );

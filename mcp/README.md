@@ -19,7 +19,7 @@ An MCP (Model Context Protocol) server that gives your AI agent real-world funda
 | `analyze_financial_health` | Altman Z-Score, Piotroski F-Score, liquidity & leverage | — |
 | `get_full_fundamental_report` | One-shot combined report of all the above | Optional |
 
-### JapanAlpha MVP Tools (Multi-Agent Swarm)
+### Origin MVP Tools (Multi-Agent Swarm)
 | Tool | Description | Key Required |
 |------|-------------|:---:|
 | `get_regulatory_filing_section` | Strips out "Risk Factors" from SEC 10-K / EDINET | — |
@@ -133,7 +133,7 @@ Intrinsic Value = Σ[FCF×(1+g)^t / (1+r)^t] + Terminal Value / (1+r)^10
 ```
 
 ## Explainability by Design (Decision Traces)
-JapanAlpha requires a high degree of transparency. The MCP server includes an embedded SQLite database (`japanalpha_traces.db`) to log every deductive step made by your LangGraph/AutoGen swarm. 
+Origin requires a high degree of transparency. The MCP server includes an embedded SQLite database (`japanalpha_traces.db`) to log every deductive step made by your LangGraph/AutoGen swarm. 
 
 When your `Bull Agent` debates your `Bear Agent`, they should call `log_decision_trace` with:
 - `claim`: e.g., "Goodwill amortized under J-GAAP masks true operating cash flow."

@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "JapanAlpha — AI Hedge Fund Mission Control",
-  description: "AI-native hedge fund research platform",
+  title: "Origin — AI Hedge Fund Mission Control",
+  description: "Origin: AI-native hedge fund research platform",
 };
 
 export default function RootLayout({
