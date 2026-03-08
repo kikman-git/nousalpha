@@ -2,6 +2,8 @@
 
 > **Intellect that Generates Alpha**
 > AI Agent Orchestration for Institutional Equity Research · Starting with Japan · Scaling Globally
+>
+> 📄 **[View Our Pitch Deck (PDF)](./pitch_deck.pdf)**
 
 ---
 
@@ -29,6 +31,19 @@ Each specialized agent handles one piece of the research puzzle — reading Japa
 - **Multi-agent orchestration**: each agent = one research task
 - **Automated financial modeling**, valuation, and risk scoring
 - Designed for Japan first, **architected for global scale**
+
+---
+
+## Competitive Moat: Origin vs. General LLM Research
+
+While general tools like **ChatGPT Deep Research** provide broad synthesis, Origin (NousAlpha) is built specifically for the high-stakes environment of institutional fundamental research.
+
+| Feature | ChatGPT Deep Research | **Origin (NousAlpha)** |
+|---|---|---|
+| **Data Access** | Public web-crawled data | **Proprietary & Alternative Data**: Real-time satellite imagery (geospatial AI), direct EDINET/TDNet pipelines, and private IR transcripts. |
+| **Orchestration** | Single-model sequential search | **Specialized Swarm**: Fine-tuned orchestrator managing vertical experts (Macro, Quant, Disclosure, Geospatial) trained on institutional research styles. |
+| **Analysis Depth** | Summary of found text | **Fundamental Stress-Testing**: Built-in adversarial "Bull vs. Bear" loops that perform YoY forensic accounting and "diff" analysis on risk factors. |
+| **Verification** | Citations to URLs | **Decision Traces**: Multi-modal evidence chains linking every claim back to exact J-GAAP footnotes or audio timestamps. |
 
 ---
 
