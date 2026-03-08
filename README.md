@@ -3,13 +3,13 @@
 > **Intellect that Generates Alpha**
 > AI Agent Orchestration for Institutional Equity Research · Starting with Japan · Scaling Globally
 >
-> 📄 **[View Our Pitch Deck (PDF)](./pitch_deck.pdf)** | 🎬 **[Watch Our Demo (YouTube)](https://www.youtube.com/watch?v=9c2j8wctNhs)**
+> 📄 **[View Our Pitch Deck (PDF)](./pitch_deck.pdf)** | 🎬 **[Watch Our Demo (YouTube)](https://youtu.be/pV6Tua9APh8)**
 
 ### **Watch Our Demo Video**
 
-[![Origin Demo Video](https://img.youtube.com/vi/9c2j8wctNhs/0.jpg)](https://www.youtube.com/watch?v=9c2j8wctNhs)
+[![Origin Demo Video](https://img.youtube.com/vi/9c2j8wctNhs/0.jpg)](https://youtu.be/pV6Tua9APh8)
 
-**[Watch on YouTube](https://www.youtube.com/watch?v=9c2j8wctNhs)**
+**[Watch on YouTube](https://youtu.be/pV6Tua9APh8)**
 
 ---
 
