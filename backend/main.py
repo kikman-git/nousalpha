@@ -22,6 +22,7 @@ app.add_middleware(
 analysis_logs: dict[str, list[dict]] = {}
 
 
+<<<<<<< HEAD
 def get_mock_events(company: str) -> list[dict]:
     """Generate mock SSE events for Akatsuki (3932.T) style analysis with 4 data-source agents."""
     return [
@@ -248,34 +249,54 @@ def get_mock_events(company: str) -> list[dict]:
 async def health_check():
     return {"status": "ok"}
 
+=======
+from graph import app as langgraph_app
+from langchain_core.messages import HumanMessage
+>>>>>>> a1a5323 (Integrated Shisa.ai LLM and Crustdata B2B Intelligence into LangGraph MCP)
 
 @app.get("/api/analyze/{company}")
 async def analyze_company(company: str):
-    """SSE endpoint that streams agent analysis events in real-time."""
+    """SSE endpoint that streams LangGraph agent analysis events in real-time."""
     run_id = str(uuid.uuid4())[:8]
     analysis_logs[run_id] = []
 
     async def event_stream():
-        events = get_mock_events(company)
         start_time = time.time()
 
         # Send initial metadata
         meta = {"type": "meta", "run_id": run_id, "company": company, "timestamp": datetime.now().isoformat()}
         yield f"data: {json.dumps(meta, ensure_ascii=False)}\n\n"
+        
+        # Init message
+        init_msg = {"type": "agent_event", "run_id": run_id, "timestamp": datetime.now().isoformat(), "elapsed": 0.0, "agent": "orchestrator", "status": "running", "message": f"Starting live LangGraph analysis of {company}", "phase": "init"}
+        analysis_logs[run_id].append(init_msg)
+        yield f"data: {json.dumps(init_msg, ensure_ascii=False)}\n\n"
 
-        for event in events:
-            delay = event.pop("delay", 0.5)
-            await asyncio.sleep(delay)
+        # Run the Graph!
+        try:
+            # We use astream to yield updates as nodes complete
+            async for output in langgraph_app.astream({"company": company, "ticker": company, "raw_data": {}, "messages": []}):
+                # output is a dict keyed by node name (e.g., {"data_fetcher": {...state updates...}})
+                for node_name, state_updates in output.items():
+                    # The state returns the messages we appended
+                    if "messages" in state_updates:
+                        for msg in state_updates["messages"]:
+                            elapsed = round(time.time() - start_time, 2)
+                            log_entry = {
+                                "type": "agent_event",
+                                "run_id": run_id,
+                                "timestamp": datetime.now().isoformat(),
+                                "elapsed": elapsed,
+                                **msg,
+                            }
+                            analysis_logs[run_id].append(log_entry)
+                            yield f"data: {json.dumps(log_entry, ensure_ascii=False)}\n\n"
+                            # Small delay to ensure the UI renders the sequence cleanly
+                            await asyncio.sleep(0.1)
 
-            log_entry = {
-                "type": "agent_event",
-                "run_id": run_id,
-                "timestamp": datetime.now().isoformat(),
-                "elapsed": round(time.time() - start_time, 2),
-                **event,
-            }
-            analysis_logs[run_id].append(log_entry)
-            yield f"data: {json.dumps(log_entry, ensure_ascii=False)}\n\n"
+        except Exception as e:
+            err_msg = {"type": "agent_event", "run_id": run_id, "timestamp": datetime.now().isoformat(), "elapsed": round(time.time() - start_time, 2), "agent": "orchestrator", "status": "error", "message": f"Graph Execution Error: {str(e)}", "phase": "judgment"}
+            yield f"data: {json.dumps(err_msg, ensure_ascii=False)}\n\n"
 
         # Send done signal
         done = {"type": "done", "run_id": run_id, "elapsed": round(time.time() - start_time, 2)}

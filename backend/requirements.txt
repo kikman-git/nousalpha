@@ -17,10 +17,9 @@ numpy
 # AI & Agents
 langchain
 langgraph
-crewai
-autogen-agentchat
+langchain-openai
 openai
-anthropic
+mcp[cli]
 
 # Concurrency & Cache
 redis

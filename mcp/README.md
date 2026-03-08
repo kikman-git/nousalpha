@@ -39,7 +39,7 @@ An MCP (Model Context Protocol) server that gives your AI agent real-world funda
 ### 2. Install
 
 ```powershell
-cd c:\Azamat\yctokyohackathon\mcp
+cd c:\Azamat\yctokyohackathon\nousalpha\mcp
 
 # Create and activate virtual environment
 python -m venv .venv
@@ -81,8 +81,8 @@ Add this to your `claude_desktop_config.json` (usually at `%APPDATA%\Claude\clau
 {
   "mcpServers": {
     "fundamental-analysis": {
-      "command": "C:\\Azamat\\yctokyohackathon\\mcp\\.venv\\Scripts\\python.exe",
-      "args": ["C:\\Azamat\\yctokyohackathon\\mcp\\server.py"],
+      "command": "C:\\Azamat\\yctokyohackathon\\nousalpha\\mcp\\.venv\\Scripts\\python.exe",
+      "args": ["C:\\Azamat\\yctokyohackathon\\nousalpha\\mcp\\server.py"],
       "env": {
         "ALPHA_VANTAGE_API_KEY": "your_key_here",
         "FINNHUB_API_KEY": "your_key_here"
