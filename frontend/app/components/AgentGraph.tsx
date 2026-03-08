@@ -7,12 +7,12 @@ type Props = {
   highlightedEvidence: string[];
 };
 
-const CENTER_X = 400;
+const CENTER_X = 500;
 const CHILD_POSITIONS = [
-  { id: "news", x: 100, color: "#22c55e", label: "News Agent" },
-  { id: "ir", x: 290, color: "#06b6d4", label: "IR Agent" },
-  { id: "financial", x: 490, color: "#8b5cf6", label: "Financial Agent" },
-  { id: "satellite", x: 680, color: "#ec4899", label: "Satellite Agent" },
+  { id: "news", x: 125, color: "#22c55e", label: "News Agent" },
+  { id: "ir", x: 375, color: "#06b6d4", label: "IR Agent" },
+  { id: "financial", x: 625, color: "#8b5cf6", label: "Financial Agent" },
+  { id: "satellite", x: 875, color: "#ec4899", label: "Satellite Agent" },
 ];
 
 function flattenObj(obj: Record<string, unknown>): string[] {
@@ -25,8 +25,8 @@ function flattenObj(obj: Record<string, unknown>): string[] {
 }
 
 function OrchestratorNode({ y, message, status }: { y: number; message: string; status: string }) {
-  const w = 280;
-  const h = 44;
+  const w = 340;
+  const h = 52;
   const isActive = status === "running";
   const isDone = status === "completed";
   const color = isDone ? "#3b82f6" : isActive ? "#f59e0b" : "#3f3f46";
@@ -42,13 +42,13 @@ function OrchestratorNode({ y, message, status }: { y: number; message: string; 
         stroke={color} strokeWidth={1.5} />
       <circle cx={CENTER_X - w / 2 + 16} cy={y + h / 2} r={5}
         fill={color} className={isActive ? "animate-pulse-glow" : ""} />
-      <text x={CENTER_X - w / 2 + 28} y={y + h / 2 - 4}
-        fontSize={11} fontWeight={700} fill={color}
+      <text x={CENTER_X - w / 2 + 28} y={y + h / 2 - 5}
+        fontSize={13} fontWeight={700} fill={color}
         fontFamily="var(--font-geist-mono), monospace">
         Orchestrator
       </text>
-      <text x={CENTER_X - w / 2 + 28} y={y + h / 2 + 10}
-        fontSize={8} fill="#71717a"
+      <text x={CENTER_X - w / 2 + 28} y={y + h / 2 + 12}
+        fontSize={10} fill="#71717a"
         fontFamily="var(--font-geist-mono), monospace">
         {message}
       </text>
@@ -59,8 +59,8 @@ function OrchestratorNode({ y, message, status }: { y: number; message: string; 
 function AgentNode({ x, y, label, color, status }: {
   x: number; y: number; label: string; color: string; status: string;
 }) {
-  const w = 150;
-  const h = 36;
+  const w = 180;
+  const h = 40;
   const isActive = status === "running";
   const isDone = status === "completed";
   const nodeColor = isDone ? "#3b82f6" : isActive ? color : "#3f3f46";
@@ -77,7 +77,7 @@ function AgentNode({ x, y, label, color, status }: {
       <circle cx={x - w / 2 + 14} cy={y + h / 2} r={3.5}
         fill={nodeColor} className={isActive ? "animate-pulse-glow" : ""} />
       <text x={x - w / 2 + 24} y={y + h / 2 + 4}
-        fontSize={10} fontWeight={600} fill={nodeColor}
+        fontSize={12} fontWeight={600} fill={nodeColor}
         fontFamily="var(--font-geist-mono), monospace">
         {label}
       </text>
@@ -91,11 +91,11 @@ function ToolCard({ tool, x, y, color, highlighted }: {
   const isDone = tool.status === "completed";
   const inputLines = tool.input ? flattenObj(tool.input) : [];
   const outputLines = tool.output ? flattenObj(tool.output) : [];
-  const w = 150;
-  const lineH = 11;
-  const headerH = 18;
-  const gap = outputLines.length > 0 && inputLines.length > 0 ? 5 : 0;
-  const h = headerH + (inputLines.length + outputLines.length) * lineH + gap + 8;
+  const w = 210;
+  const lineH = 14;
+  const headerH = 22;
+  const gap = outputLines.length > 0 && inputLines.length > 0 ? 6 : 0;
+  const h = headerH + (inputLines.length + outputLines.length) * lineH + gap + 10;
 
   return (
     <g>
@@ -110,7 +110,7 @@ function ToolCard({ tool, x, y, color, highlighted }: {
       <rect x={x - w / 2} y={y + 4} width={2.5} height={h - 8} rx={1}
         fill={isDone ? color : "#eab308"} opacity={highlighted ? 1 : 0.4} />
       {/* Tool name header */}
-      <text x={x - w / 2 + 10} y={y + 13} fontSize={8.5} fontWeight={700}
+      <text x={x - w / 2 + 10} y={y + 16} fontSize={11} fontWeight={700}
         fill={isDone ? color : "#eab308"}
         fontFamily="var(--font-geist-mono), monospace">
         {tool.name}
@@ -118,9 +118,9 @@ function ToolCard({ tool, x, y, color, highlighted }: {
       {/* Evidence badge */}
       {tool.evidence_id && (
         <>
-          <rect x={x + w / 2 - 50} y={y + 3} width={46} height={14} rx={4}
+          <rect x={x + w / 2 - 60} y={y + 4} width={56} height={16} rx={4}
             fill={highlighted ? "#22c55e15" : "#ffffff05"} />
-          <text x={x + w / 2 - 27} y={y + 13} fontSize={7}
+          <text x={x + w / 2 - 32} y={y + 15} fontSize={9}
             fill={highlighted ? "#4ade80" : "#3f3f46"} textAnchor="middle"
             fontFamily="var(--font-geist-mono), monospace">
             {tool.evidence_id}
@@ -129,8 +129,8 @@ function ToolCard({ tool, x, y, color, highlighted }: {
       )}
       {/* Input */}
       {inputLines.map((line, i) => (
-        <text key={`in-${i}`} x={x - w / 2 + 10} y={y + headerH + 6 + i * lineH}
-          fontSize={7.5} fill="#a1a1aa"
+        <text key={`in-${i}`} x={x - w / 2 + 10} y={y + headerH + 8 + i * lineH}
+          fontSize={10} fill="#a1a1aa"
           fontFamily="var(--font-geist-mono), monospace">
           {line}
         </text>
@@ -144,8 +144,8 @@ function ToolCard({ tool, x, y, color, highlighted }: {
       {/* Output */}
       {outputLines.map((line, i) => (
         <text key={`out-${i}`} x={x - w / 2 + 10}
-          y={y + headerH + inputLines.length * lineH + gap + 6 + i * lineH}
-          fontSize={7.5} fill={highlighted ? "#86efac" : "#52525b"}
+          y={y + headerH + inputLines.length * lineH + gap + 8 + i * lineH}
+          fontSize={10} fill={highlighted ? "#86efac" : "#52525b"}
           fontFamily="var(--font-geist-mono), monospace">
           {line}
         </text>
@@ -157,8 +157,8 @@ function ToolCard({ tool, x, y, color, highlighted }: {
 function getToolCardHeight(tool: ToolTrace): number {
   const inLen = tool.input ? Object.keys(tool.input).length : 0;
   const outLen = tool.output ? Object.keys(tool.output).length : 0;
-  const gap = outLen > 0 && inLen > 0 ? 5 : 0;
-  return 18 + (inLen + outLen) * 11 + gap + 8;
+  const gap = outLen > 0 && inLen > 0 ? 6 : 0;
+  return 22 + (inLen + outLen) * 14 + gap + 10;
 }
 
 export default function AgentGraph({ agents, highlightedEvidence }: Props) {
@@ -307,7 +307,7 @@ export default function AgentGraph({ agents, highlightedEvidence }: Props) {
           </span>
         </div>
       </div>
-      <svg viewBox={`0 0 800 ${svgHeight}`} className="w-full h-auto" style={{ minWidth: 700 }}>
+      <svg viewBox={`0 0 1000 ${svgHeight}`} className="w-full h-auto">
         <defs>
           <marker id="arrowDown" markerWidth="6" markerHeight="5" refX="3" refY="5" orient="auto">
             <path d="M0,0 L3,5 L6,0" fill="#f59e0b40" />
