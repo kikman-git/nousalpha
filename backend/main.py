@@ -25,56 +25,76 @@ analysis_logs: dict[str, list[dict]] = {}
 def get_mock_events(company: str) -> list[dict]:
     """Generate mock SSE events for Akatsuki (3932.T) style analysis with 4 data-source agents."""
     return [
-        # ── Phase 1: Orchestrator kicks off ──
-        {"agent": "orchestrator", "status": "running", "message": f"Starting multi-source analysis of \"{company}\"", "phase": "init", "delay": 0.3},
-        {"agent": "orchestrator", "status": "running", "message": "Dispatching 4 data-source agents in parallel...", "phase": "dispatch", "delay": 0.5},
+        # ── Phase 1: Orchestrator receives URL, identifies company ──
+        {"agent": "orchestrator", "status": "running", "message": f"Received: {company} — Resolving corporate identity...", "phase": "init", "delay": 0.3,
+         "tool": {"name": "google_search", "input": {"query": f"{company} IR investor relations"}, "status": "calling"}},
 
-        # ── Phase 2: Agents begin data collection ──
+        {"agent": "orchestrator", "status": "running", "message": "Identified: Akatsuki Inc. (3932.T) — aktsk.jp/ir/", "phase": "init", "delay": 0.7,
+         "tool": {"name": "google_search", "status": "completed",
+                  "output": {"company": "Akatsuki Inc.", "ticker": "3932.T", "ir_url": "https://aktsk.jp/ir/", "sector": "Entertainment/Gaming", "hq": "Meguro, Tokyo"},
+                  "evidence_id": "ev-orch-1"}},
 
-        # Agent 1 — IR / Public Filings (EDINET, TDnet)
-        {"agent": "ir", "status": "running", "message": "Querying EDINET and TDnet for disclosure filings...",
+        {"agent": "orchestrator", "status": "running", "message": "Dispatching company URL to 4 agents in parallel...", "phase": "dispatch", "delay": 0.4},
+
+        # ── Phase 2: Each agent receives the URL and searches independently ──
+
+        # Agent 1 — IR / Filings: crawls IR page → finds EDINET/TDnet links
+        {"agent": "ir", "status": "running", "message": "Crawling https://aktsk.jp/ir/ for filing links...",
          "phase": "search", "delay": 0.3,
-         "tool": {"name": "edinet_api", "input": {"company": company, "ticker": "3932.T", "doc_types": ["annual_securities_report", "quarterly_report"], "period": "FY2026-Q2"}, "status": "calling"}},
+         "tool": {"name": "web_crawl", "input": {"url": "https://aktsk.jp/ir/", "extract": ["pdf_links", "edinet_links", "tdnet_links"]}, "status": "calling"}},
 
-        # Agent 2 — Audio / Transcripts (YouTube earnings call)
-        {"agent": "audio", "status": "running", "message": "Fetching earnings call video from YouTube IR page...",
+        # Agent 2 — Audio: crawls IR page → finds YouTube earnings call link
+        {"agent": "audio", "status": "running", "message": "Crawling https://aktsk.jp/ir/ for video/audio links...",
          "phase": "search", "delay": 0.2,
-         "tool": {"name": "youtube_fetch", "input": {"url": "https://www.youtube.com/watch?v=eaeBSWsd8mU", "type": "Q2 FY2026 Earnings Presentation", "source": "aktsk.jp/ir/"}, "status": "calling"}},
+         "tool": {"name": "web_crawl", "input": {"url": "https://aktsk.jp/ir/", "extract": ["youtube_links", "audio_links", "webinar_links"]}, "status": "calling"}},
 
-        # Agent 3 — Macro / Policy
-        {"agent": "macro", "status": "running", "message": "Scanning BOJ, FSA, Digital Agency, METI policy announcements...",
+        # Agent 3 — Macro: Google searches for sector-relevant policy
+        {"agent": "macro", "status": "running", "message": "Searching government policy for Entertainment/Gaming sector...",
          "phase": "search", "delay": 0.4,
-         "tool": {"name": "policy_scanner", "input": {"sources": ["BOJ", "FSA", "Digital Agency", "METI", "JFTC"], "sectors": ["Entertainment", "Mobile Gaming", "AI/DX"], "lookback_days": 90}, "status": "calling"}},
+         "tool": {"name": "google_search", "input": {"queries": ["BOJ monetary policy 2026", "METI content industry policy", "Digital Agency AI promotion", "JFTC mobile platform regulation"], "sector": "Entertainment/Gaming"}, "status": "calling"}},
 
-        # Agent 4 — Geospatial / Satellite
-        {"agent": "satellite", "status": "running", "message": "Tasking satellite for imagery of headquarters and event venues...",
+        # Agent 4 — Geospatial: resolves HQ address → tasks satellite
+        {"agent": "satellite", "status": "running", "message": "Resolving HQ address from https://aktsk.jp and tasking satellite...",
          "phase": "search", "delay": 0.3,
-         "tool": {"name": "satellite_tasking", "input": {"target": "Akatsuki HQ Meguro, Tokyo", "coordinates": "35.6340N, 139.7082E", "resolution": "0.5m", "bands": ["RGB", "NIR"]}, "status": "calling"}},
+         "tool": {"name": "geocode_and_task", "input": {"company_url": "https://aktsk.jp", "resolve": "headquarters coordinates", "resolution": "0.5m"}, "status": "calling"}},
 
-        # ── Phase 3: Raw data retrieved ──
+        # ── Phase 3: Crawl results + data retrieval ──
 
-        {"agent": "ir", "status": "running", "message": "Retrieved 5 EDINET filings + 4 TDnet disclosures for Akatsuki Inc.",
-         "phase": "analyze", "delay": 0.9,
-         "tool": {"name": "edinet_api", "status": "completed",
+        {"agent": "ir", "status": "running", "message": "Found 15 IR documents on aktsk.jp/ir/. Fetching EDINET filings...",
+         "phase": "analyze", "delay": 0.7,
+         "tool": {"name": "web_crawl", "status": "completed",
+                  "output": {"pdfs_found": 15, "quarterly_reports": 4, "supplementary_data": 4, "qa_summary": 1, "latest": "Q3 FY2026 (2026/02/09)"},
+                  "evidence_id": "ev-ir-0"}},
+
+        {"agent": "ir", "status": "running", "message": "Downloaded 5 EDINET filings + 4 TDnet disclosures",
+         "phase": "analyze", "delay": 0.6,
+         "tool": {"name": "edinet_api", "input": {"edinet_code": "E33829", "period": "FY2026"},
+                  "status": "completed",
                   "output": {"edinet_docs": 5, "tdnet_docs": 4, "quarterly_q2": "E33829-S100XXXX", "segment_change": "3 new segments announced", "dividend_notice": "DOE 4%, JPY 55/share interim"},
                   "evidence_id": "ev-ir-1"}},
 
+        {"agent": "audio", "status": "running", "message": "Found YouTube link: Q2 FY2026 Earnings Presentation. Downloading...",
+         "phase": "analyze", "delay": 0.5,
+         "tool": {"name": "web_crawl", "status": "completed",
+                  "output": {"youtube_url": "https://www.youtube.com/watch?v=eaeBSWsd8mU", "label": "Q2 FY2026 Earnings Presentation (video)", "qa_pdf": "Q2 FY2026 QA Summary (PDF)"},
+                  "evidence_id": "ev-aud-0"}},
+
         {"agent": "audio", "status": "running", "message": "Video downloaded (28:14). Running Whisper transcription...",
-         "phase": "analyze", "delay": 1.0,
-         "tool": {"name": "youtube_fetch", "status": "completed",
+         "phase": "analyze", "delay": 0.8,
+         "tool": {"name": "youtube_dl", "status": "completed",
                   "output": {"video_id": "eaeBSWsd8mU", "duration": "28:14", "language": "Japanese", "speaker": "VP Ishikura", "format": "Q2 FY2026 Earnings"},
                   "evidence_id": "ev-aud-1"}},
 
-        {"agent": "macro", "status": "running", "message": "87 policy documents retrieved. Filtering for sector relevance...",
+        {"agent": "macro", "status": "running", "message": "87 policy pages retrieved. Filtering for Entertainment/Gaming relevance...",
          "phase": "analyze", "delay": 0.7,
-         "tool": {"name": "policy_scanner", "status": "completed",
-                  "output": {"total_scanned": 87, "sector_relevant": 14, "digital_agency_ai": "AI utilization promotion policy", "meti_content": "Content industry export JPY 500B target", "jftc_mobile": "Mobile platform fair competition guidelines"},
+         "tool": {"name": "google_search", "status": "completed",
+                  "output": {"total_results": 87, "sector_relevant": 14, "top_sources": ["BOJ", "METI", "Digital Agency", "JFTC"], "key_policies": 4},
                   "evidence_id": "ev-mac-1"}},
 
-        {"agent": "satellite", "status": "running", "message": "Imagery acquired. Running footfall and activity analysis...",
+        {"agent": "satellite", "status": "running", "message": "HQ resolved: 35.6340N, 139.7082E (Meguro). Imagery acquired.",
          "phase": "analyze", "delay": 0.9,
-         "tool": {"name": "satellite_tasking", "status": "completed",
-                  "output": {"image_date": "2026-03-05", "facility": "Akatsuki HQ Meguro", "cloud_cover": "5%", "ground_resolution": "0.5m"},
+         "tool": {"name": "geocode_and_task", "status": "completed",
+                  "output": {"coordinates": "35.6340N, 139.7082E", "facility": "Akatsuki HQ Meguro", "image_date": "2026-03-05", "cloud_cover": "5%", "ground_resolution": "0.5m"},
                   "evidence_id": "ev-sat-1"}},
 
         # ── Phase 4: Deep analysis with LLM + specialized tools ──

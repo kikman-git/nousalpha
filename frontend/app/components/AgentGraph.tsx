@@ -168,10 +168,10 @@ export default function AgentGraph({ agents, highlightedEvidence }: Props) {
   const orchestrator = agents.orchestrator;
   const orchStatus = orchestrator?.status || "idle";
 
-  // --- Phase 1: Orchestrator "Starting" ---
-  if (orchestrator?.messages.some((m) => m.includes("Starting"))) {
+  // --- Phase 1: Orchestrator init ---
+  if (orchestrator?.messages.some((m) => m.includes("Received") || m.includes("Identified") || m.includes("Dispatching"))) {
     elements.push(
-      <OrchestratorNode key="orch-start" y={y} message="Starting comprehensive analysis"
+      <OrchestratorNode key="orch-start" y={y} message="Identifying company and dispatching agents"
         status={orchStatus === "completed" ? "completed" : "running"} />
     );
     y += 60;
