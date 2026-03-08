@@ -52,6 +52,16 @@ export type AgentEvent = {
       bear_score: string;
       verdict_basis: string;
     };
+    alpha?: {
+      expected_return: number;
+      probability: number;
+      drivers: { factor: string; impact: number; evidence_ids: string[] }[];
+    };
+    beta?: {
+      risk_score: number;
+      probability: number;
+      factors: { factor: string; severity: number; evidence_ids: string[] }[];
+    };
   };
 };
 
@@ -265,7 +275,12 @@ export default function Home() {
               {judgment && (
                 <>
                   <Verdict3D signal={judgment.signal} confidence={judgment.confidence} />
-                  <PredictionDashboard signal={judgment.signal} confidence={judgment.confidence} />
+                  <PredictionDashboard
+                    signal={judgment.signal}
+                    confidence={judgment.confidence}
+                    alpha={judgment.alpha}
+                    beta={judgment.beta}
+                  />
                 </>
               )}
             </div>

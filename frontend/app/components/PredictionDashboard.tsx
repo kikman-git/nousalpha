@@ -1,8 +1,22 @@
 "use client";
 
+type AlphaData = {
+  expected_return: number;
+  probability: number;
+  drivers: { factor: string; impact: number; evidence_ids: string[] }[];
+};
+
+type BetaData = {
+  risk_score: number;
+  probability: number;
+  factors: { factor: string; severity: number; evidence_ids: string[] }[];
+};
+
 type Props = {
   signal: string;
   confidence: number;
+  alpha?: AlphaData;
+  beta?: BetaData;
 };
 
 // Mock stock price data for Akatsuki TYO:3932
@@ -16,7 +30,6 @@ const PRICE_HISTORY = [
   { label: "Mar", price: 2420 },
 ];
 
-// 3-year prediction with confidence bands
 const PREDICTION = [
   { label: "Mar", price: 2420, upper: 2420, lower: 2420 },
   { label: "Jun'26", price: 2680, upper: 2900, lower: 2450 },
@@ -39,13 +52,6 @@ const SEGMENT_DATA = [
   { label: "Game / Comic", current: 5.2, prev: 4.1, color: "#22c55e" },
   { label: "Ent / Lifestyle", current: 1.8, prev: 1.2, color: "#06b6d4" },
   { label: "AI-DX Solutions", current: 0.6, prev: 0.0, color: "#a855f7" },
-];
-
-const EVIDENCE_SCORES = [
-  { label: "IR Filings", score: 88, color: "#06b6d4" },
-  { label: "Earnings Call", score: 81, color: "#f59e0b" },
-  { label: "News / Policy", score: 75, color: "#22c55e" },
-  { label: "Satellite", score: 92, color: "#ec4899" },
 ];
 
 function LineChart() {
@@ -72,18 +78,15 @@ function LineChart() {
   const toX = (i: number) => padL + i * xStep;
   const toY = (p: number) => padT + innerH - ((p - allMin) / (allMax - allMin)) * innerH;
 
-  // Historical path
   const histPath = PRICE_HISTORY.map((p, i) =>
     `${i === 0 ? "M" : "L"}${toX(i).toFixed(1)},${toY(p.price).toFixed(1)}`
   ).join(" ");
 
-  // Prediction path
   const predOff = PRICE_HISTORY.length - 1;
   const predPath = PREDICTION.map((p, i) =>
     `${i === 0 ? "M" : "L"}${toX(predOff + i).toFixed(1)},${toY(p.price).toFixed(1)}`
   ).join(" ");
 
-  // Confidence band
   const upperPts = PREDICTION.map((p, i) =>
     `${toX(predOff + i).toFixed(1)},${toY(p.upper).toFixed(1)}`
   ).join(" ");
@@ -96,7 +99,6 @@ function LineChart() {
   const current = PRICE_HISTORY[PRICE_HISTORY.length - 1];
   const upside = Math.round(((target.price - current.price) / current.price) * 100);
 
-  // All labels
   const labels = [
     ...PRICE_HISTORY.map((p) => p.label),
     ...PREDICTION.slice(1).map((p) => p.label),
@@ -119,7 +121,6 @@ function LineChart() {
         </div>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto">
-        {/* Grid */}
         {[0, 0.25, 0.5, 0.75, 1].map((t) => {
           const y = padT + innerH * (1 - t);
           const price = Math.round(allMin + (allMax - allMin) * t);
@@ -132,8 +133,6 @@ function LineChart() {
             </g>
           );
         })}
-
-        {/* X labels */}
         {labels.map((label, i) => (
           i % 2 === 0 ? (
             <text key={i} x={toX(i)} y={H - 8} fontSize={9} fill="#52525b" textAnchor="middle" fontFamily="monospace">
@@ -141,36 +140,27 @@ function LineChart() {
             </text>
           ) : null
         ))}
-
-        {/* Band */}
         <path d={bandPath} fill="#10b981" opacity={0.06} />
-        {/* Band upper/lower lines */}
         {PREDICTION.map((p, i) => i > 0 ? (
           <g key={`band-${i}`}>
-            <line
-              x1={toX(predOff + i - 1)} y1={toY(PREDICTION[i - 1].upper)}
-              x2={toX(predOff + i)} y2={toY(p.upper)}
-              stroke="#10b981" strokeWidth={0.7} opacity={0.25} strokeDasharray="3 3"
-            />
-            <line
-              x1={toX(predOff + i - 1)} y1={toY(PREDICTION[i - 1].lower)}
-              x2={toX(predOff + i)} y2={toY(p.lower)}
-              stroke="#10b981" strokeWidth={0.7} opacity={0.25} strokeDasharray="3 3"
-            />
+            <line x1={toX(predOff + i - 1)} y1={toY(PREDICTION[i - 1].upper)} x2={toX(predOff + i)} y2={toY(p.upper)} stroke="#10b981" strokeWidth={0.7} opacity={0.25} strokeDasharray="3 3" />
+            <line x1={toX(predOff + i - 1)} y1={toY(PREDICTION[i - 1].lower)} x2={toX(predOff + i)} y2={toY(p.lower)} stroke="#ef4444" strokeWidth={0.7} opacity={0.25} strokeDasharray="3 3" />
           </g>
         ) : null)}
-
-        {/* Historical */}
         <path d={histPath} fill="none" stroke="#a1a1aa" strokeWidth={2} />
-        {/* Prediction */}
         <path d={predPath} fill="none" stroke="#10b981" strokeWidth={2} strokeDasharray="6 3" />
-
-        {/* Current dot */}
         <circle cx={toX(predOff)} cy={toY(current.price)} r={4} fill="#a1a1aa" stroke="#18181b" strokeWidth={2} />
-        {/* Target dot */}
         <circle cx={toX(totalPts - 1)} cy={toY(target.price)} r={5} fill="#10b981" stroke="#18181b" strokeWidth={2} />
         <text x={toX(totalPts - 1)} y={toY(target.price) - 12} fontSize={11} fill="#10b981" textAnchor="middle" fontWeight="bold" fontFamily="monospace">
           {target.price.toLocaleString()}
+        </text>
+        {/* Alpha label at upper band end */}
+        <text x={toX(totalPts - 1)} y={toY(target.upper) - 8} fontSize={9} fill="#10b981" textAnchor="middle" fontFamily="monospace" opacity={0.6}>
+          {target.upper.toLocaleString()}
+        </text>
+        {/* Beta label at lower band end */}
+        <text x={toX(totalPts - 1)} y={toY(target.lower) + 14} fontSize={9} fill="#ef4444" textAnchor="middle" fontFamily="monospace" opacity={0.6}>
+          {target.lower.toLocaleString()}
         </text>
       </svg>
       <div className="flex justify-center gap-6 mt-1 text-[9px] text-zinc-500">
@@ -178,17 +168,109 @@ function LineChart() {
           <span className="inline-block w-4 h-[2px] bg-zinc-400" /> Historical
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block w-4 h-[2px] bg-emerald-400" style={{ borderTop: "1px dashed #10b981" }} /> Prediction
+          <span className="inline-block w-4 h-[2px] bg-emerald-400" /> Prediction
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block w-4 h-3 bg-emerald-500/10 border border-emerald-500/20 rounded-sm" /> Confidence Band
+          <span className="inline-block w-2 h-[2px] bg-emerald-400 opacity-40" style={{ borderTop: "1px dashed" }} /> Alpha (upside)
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block w-2 h-[2px] bg-red-400 opacity-40" style={{ borderTop: "1px dashed" }} /> Beta (downside)
         </span>
       </div>
     </div>
   );
 }
 
-export default function PredictionDashboard({ signal, confidence }: Props) {
+function AlphaBetaPanel({ alpha, beta }: { alpha?: AlphaData; beta?: BetaData }) {
+  if (!alpha && !beta) return null;
+
+  const maxImpact = alpha ? Math.max(...alpha.drivers.map((d) => d.impact)) : 1;
+  const maxSeverity = beta ? Math.max(...beta.factors.map((f) => f.severity)) : 1;
+
+  return (
+    <div className="grid grid-cols-2 gap-5">
+      {/* Alpha — Potential Return */}
+      <div className="rounded-xl border border-emerald-500/20 bg-emerald-950/10 p-4">
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-black text-emerald-400">{"\u03B1"}</span>
+            <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">Alpha (Return)</span>
+          </div>
+          {alpha && (
+            <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+              {alpha.probability}% prob.
+            </span>
+          )}
+        </div>
+        {alpha && (
+          <>
+            <div className="flex items-baseline gap-1 mb-3">
+              <span className="text-2xl font-black text-emerald-400">+{alpha.expected_return}%</span>
+              <span className="text-[10px] text-zinc-500">expected return (3Y)</span>
+            </div>
+            <div className="space-y-2.5">
+              {alpha.drivers.map((d, i) => (
+                <div key={i}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] text-zinc-300 leading-tight flex-1">{d.factor}</span>
+                    <span className="text-[10px] font-bold text-emerald-400 ml-2 shrink-0">+{d.impact}%</span>
+                  </div>
+                  <div className="h-1.5 bg-zinc-800/50 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-emerald-500 transition-all duration-1000"
+                      style={{ width: `${(d.impact / maxImpact) * 100}%`, opacity: 0.7 }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Beta — Risk */}
+      <div className="rounded-xl border border-red-500/20 bg-red-950/10 p-4">
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-black text-red-400">{"\u03B2"}</span>
+            <span className="text-[10px] font-bold text-red-500 uppercase tracking-wider">Beta (Risk)</span>
+          </div>
+          {beta && (
+            <span className="text-xs font-bold text-red-400 bg-red-500/10 px-2 py-0.5 rounded">
+              {beta.probability}% prob.
+            </span>
+          )}
+        </div>
+        {beta && (
+          <>
+            <div className="flex items-baseline gap-1 mb-3">
+              <span className="text-2xl font-black text-red-400">{beta.risk_score.toFixed(2)}</span>
+              <span className="text-[10px] text-zinc-500">risk score</span>
+            </div>
+            <div className="space-y-2.5">
+              {beta.factors.map((f, i) => (
+                <div key={i}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] text-zinc-300 leading-tight flex-1">{f.factor}</span>
+                    <span className="text-[10px] font-bold text-red-400 ml-2 shrink-0">{Math.round(f.severity * 100)}%</span>
+                  </div>
+                  <div className="h-1.5 bg-zinc-800/50 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-red-500 transition-all duration-1000"
+                      style={{ width: `${(f.severity / maxSeverity) * 100}%`, opacity: 0.7 }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function PredictionDashboard({ signal, confidence, alpha, beta }: Props) {
   const maxSeg = Math.max(...SEGMENT_DATA.map((s) => s.current));
 
   return (
@@ -220,69 +302,42 @@ export default function PredictionDashboard({ signal, confidence }: Props) {
           ))}
         </div>
 
-        {/* Bottom row: Segment Revenue + Evidence Scores */}
-        <div className="grid grid-cols-2 gap-5">
-          {/* Segment Revenue Bar Chart */}
-          <div className="rounded-xl border border-zinc-800/50 bg-zinc-900/30 p-4">
-            <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-3">Segment Revenue (JPY B)</div>
-            <div className="space-y-3">
-              {SEGMENT_DATA.map((seg) => (
-                <div key={seg.label}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[11px] text-zinc-300">{seg.label}</span>
-                    <span className="text-[11px] text-zinc-400 font-mono">{seg.current}B</span>
-                  </div>
-                  <div className="flex gap-1 items-center">
-                    {/* Previous year bar */}
-                    <div className="flex-1 h-6 bg-zinc-800/50 rounded overflow-hidden relative">
-                      {seg.prev > 0 && (
-                        <div
-                          className="absolute h-full rounded opacity-30"
-                          style={{ width: `${(seg.prev / maxSeg) * 100}%`, backgroundColor: seg.color }}
-                        />
-                      )}
-                      <div
-                        className="h-full rounded transition-all duration-1000 relative"
-                        style={{ width: `${(seg.current / maxSeg) * 100}%`, backgroundColor: seg.color, opacity: 0.8 }}
-                      />
-                    </div>
-                    {seg.prev > 0 && (
-                      <span className="text-[9px] text-emerald-400 w-12 text-right font-mono">
-                        +{Math.round(((seg.current - seg.prev) / seg.prev) * 100)}%
-                      </span>
-                    )}
-                    {seg.prev === 0 && (
-                      <span className="text-[9px] text-purple-400 w-12 text-right">NEW</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-3 mt-3 text-[8px] text-zinc-600">
-              <span className="flex items-center gap-1"><span className="inline-block w-3 h-2 bg-zinc-600/30 rounded" /> FY2025</span>
-              <span className="flex items-center gap-1"><span className="inline-block w-3 h-2 bg-zinc-400/50 rounded" /> FY2026</span>
-            </div>
-          </div>
+        {/* Alpha / Beta */}
+        <AlphaBetaPanel alpha={alpha} beta={beta} />
 
-          {/* Evidence Confidence */}
-          <div className="rounded-xl border border-zinc-800/50 bg-zinc-900/30 p-4">
-            <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-3">Evidence Confidence</div>
-            <div className="space-y-3">
-              {EVIDENCE_SCORES.map((ev) => (
-                <div key={ev.label}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[11px] text-zinc-300">{ev.label}</span>
-                    <span className="text-[11px] font-bold font-mono" style={{ color: ev.color }}>{ev.score}%</span>
-                  </div>
-                  <div className="h-5 bg-zinc-800/50 rounded overflow-hidden">
+        {/* Segment Revenue */}
+        <div className="rounded-xl border border-zinc-800/50 bg-zinc-900/30 p-4">
+          <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-3">Segment Revenue (JPY B)</div>
+          <div className="grid grid-cols-3 gap-4">
+            {SEGMENT_DATA.map((seg) => (
+              <div key={seg.label}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[11px] text-zinc-300">{seg.label}</span>
+                  <span className="text-[11px] text-zinc-400 font-mono">{seg.current}B</span>
+                </div>
+                <div className="flex gap-1 items-center">
+                  <div className="flex-1 h-6 bg-zinc-800/50 rounded overflow-hidden relative">
+                    {seg.prev > 0 && (
+                      <div
+                        className="absolute h-full rounded opacity-30"
+                        style={{ width: `${(seg.prev / maxSeg) * 100}%`, backgroundColor: seg.color }}
+                      />
+                    )}
                     <div
-                      className="h-full rounded transition-all duration-1000"
-                      style={{ width: `${ev.score}%`, backgroundColor: ev.color, opacity: 0.7 }}
+                      className="h-full rounded transition-all duration-1000 relative"
+                      style={{ width: `${(seg.current / maxSeg) * 100}%`, backgroundColor: seg.color, opacity: 0.8 }}
                     />
                   </div>
+                  {seg.prev > 0 ? (
+                    <span className="text-[9px] text-emerald-400 w-10 text-right font-mono">
+                      +{Math.round(((seg.current - seg.prev) / seg.prev) * 100)}%
+                    </span>
+                  ) : (
+                    <span className="text-[9px] text-purple-400 w-10 text-right">NEW</span>
+                  )}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

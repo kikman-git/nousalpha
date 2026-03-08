@@ -240,6 +240,26 @@ def get_mock_events(company: str) -> list[dict]:
                  "bear_score": "Moderate (valid execution risk, but weakened by lack of counter-evidence to satellite data)",
                  "verdict_basis": "Multi-source evidence convergence outweighs execution risk concerns",
              },
+             "alpha": {
+                 "expected_return": 82,
+                 "probability": 68,
+                 "drivers": [
+                     {"factor": "Kaiju No.8 global IP monetization (JPY 2B+ month 1, 40% overseas)", "impact": 35, "evidence_ids": ["ev-co-3", "ev-ir-2"]},
+                     {"factor": "3-segment diversification: Game/Comic + Ent/Lifestyle + AI-DX", "impact": 20, "evidence_ids": ["ev-ir-3"]},
+                     {"factor": "19 VC exits (4 IPOs) — proven capital allocation", "impact": 15, "evidence_ids": ["ev-ir-2", "ev-nw-3"]},
+                     {"factor": "METI JPY 500B content export policy tailwind", "impact": 12, "evidence_ids": ["ev-nw-2", "ev-nw-1"]},
+                 ],
+             },
+             "beta": {
+                 "risk_score": 0.38,
+                 "probability": 32,
+                 "factors": [
+                     {"factor": "Single-title concentration: Kaiju No.8 revenue decay risk", "severity": 0.75, "evidence_ids": ["ev-ir-2", "ev-co-3"]},
+                     {"factor": "Dual M&A integration in H2 — management bandwidth", "severity": 0.60, "evidence_ids": ["ev-ir-3", "ev-co-3"]},
+                     {"factor": "BOJ rate uncertainty — may impact M&A financing", "severity": 0.35, "evidence_ids": ["ev-nw-3"]},
+                     {"factor": "Valuation already reflects growth expectations", "severity": 0.45, "evidence_ids": ["ev-co-3", "ev-ir-2"]},
+                 ],
+             },
          }},
     ]
 
