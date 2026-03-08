@@ -36,7 +36,7 @@ def get_mock_events(company: str) -> list[dict]:
 
         {"agent": "ir", "status": "running", "message": "Searching IR materials & filings...",
          "phase": "search", "delay": 0.2,
-         "tool": {"name": "ir_scraper", "input": {"company": company, "sources": ["EDINET", "TDnet", "company_ir_page"]}, "status": "calling"}},
+         "tool": {"name": "ir_scraper", "input": {"company": company, "sources": ["EDINET", "TDnet", "company_ir_page"], "formats": ["PDF", "video", "HTML"]}, "status": "calling"}},
 
         {"agent": "financial", "status": "running", "message": "Fetching company fundamentals...",
          "phase": "search", "delay": 0.4,
@@ -53,10 +53,10 @@ def get_mock_events(company: str) -> list[dict]:
                   "output": {"total_results": 47, "top_sources": ["Nikkei Asia", "Reuters", "Bloomberg"]},
                   "evidence_id": "ev-news-1"}},
 
-        {"agent": "ir", "status": "running", "message": "Annual securities report (FY2025.03) + mid-term plan retrieved...",
+        {"agent": "ir", "status": "running", "message": "Retrieved: Annual report (PDF), mid-term plan (PDF), earnings call (video)",
          "phase": "analyze", "delay": 0.8,
          "tool": {"name": "ir_scraper", "status": "completed",
-                  "output": {"documents_found": 3, "annual_report": "E02144-S100XXXX", "mid_term_plan": "2025-2030", "earnings_call": "Q4 FY2025"},
+                  "output": {"documents_found": 5, "annual_report": "E02144-S100XXXX (PDF)", "mid_term_plan": "2025-2030 (PDF)", "earnings_call": "Q4 FY2025 (video)", "presentation": "FY2025 Investor Day (PDF)", "transcript": "Q4 call transcript (HTML)"},
                   "evidence_id": "ev-ir-1"}},
 
         {"agent": "financial", "status": "running", "message": "Sector: Automotive / Market Cap: $280B / PER: 11.2x",
