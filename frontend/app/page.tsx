@@ -5,11 +5,9 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import AgentGraph from "./components/AgentGraph";
 import DebatePanel from "./components/DebatePanel";
 import LogPanel from "./components/LogPanel";
-import StockChart from "./components/StockChart";
 import DataSourcesPanel from "./components/DataSourcesPanel";
 import PredictionDashboard from "./components/PredictionDashboard";
 
-const AgentNetwork3D = dynamic(() => import("./components/AgentNetwork3D"), { ssr: false });
 const Verdict3D = dynamic(() => import("./components/Verdict3D"), { ssr: false });
 
 export type ToolTrace = {
@@ -86,14 +84,29 @@ export default function Home() {
   const [highlightedEvidence, setHighlightedEvidence] = useState<string[]>([]);
   const [debateEvents, setDebateEvents] = useState<AgentEvent[]>([]);
   const abortRef = useRef<AbortController | null>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollAnchorRef = useRef<HTMLDivElement>(null);
+  const userScrolledUp = useRef(false);
 
-  // Auto-scroll during analysis
+  // Detect if user scrolled up — pause auto-scroll
   useEffect(() => {
-    if (isRunning || judgment) {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-    }
-  }, [logs, debateEvents, judgment, isRunning]);
+    const onScroll = () => {
+      const scrollBottom = window.innerHeight + window.scrollY;
+      const docHeight = document.documentElement.scrollHeight;
+      userScrolledUp.current = docHeight - scrollBottom > 300;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Auto-scroll to latest content
+  useEffect(() => {
+    if (!isRunning && !judgment) return;
+    if (userScrolledUp.current) return;
+    const timer = setTimeout(() => {
+      scrollAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [logs.length, debateEvents.length, judgment, isRunning]);
 
   const initAgents = useCallback(() => {
     const initial: Record<string, AgentState> = {};
@@ -103,7 +116,6 @@ export default function Home() {
     return initial;
   }, []);
 
-  // Collect all tools from all agents
   const allTools = Object.values(agents).flatMap((a) => a.tools);
 
   const startAnalysis = useCallback(async () => {
@@ -114,6 +126,7 @@ export default function Home() {
     setLogs([]);
     setDebateEvents([]);
     setHighlightedEvidence([]);
+    userScrolledUp.current = false;
     const agentStates = initAgents();
     setAgents(agentStates);
 
@@ -237,15 +250,10 @@ export default function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Left: 3D + Agent Graph + Debate + Verdict — 3 cols */}
+            {/* Left: Agent Flow + Debate + Verdict + Dashboard — 3 cols */}
             <div className="lg:col-span-3 space-y-4">
-              {/* 3D Network + SVG Agent Graph side by side */}
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                <AgentNetwork3D agents={agents} highlightedEvidence={highlightedEvidence} />
-                <AgentGraph agents={agents} highlightedEvidence={highlightedEvidence} />
-              </div>
+              <AgentGraph agents={agents} highlightedEvidence={highlightedEvidence} />
 
-              {/* Debate */}
               {debateEvents.length > 0 && (
                 <DebatePanel
                   events={debateEvents}
@@ -254,16 +262,10 @@ export default function Home() {
                 />
               )}
 
-              {/* Verdict + Prediction */}
               {judgment && (
                 <>
                   <Verdict3D signal={judgment.signal} confidence={judgment.confidence} />
                   <PredictionDashboard signal={judgment.signal} confidence={judgment.confidence} />
-                  <StockChart
-                    ticker="TSE:3932"
-                    signal={judgment.signal}
-                    confidence={judgment.confidence}
-                  />
                 </>
               )}
             </div>
@@ -275,7 +277,7 @@ export default function Home() {
             </div>
           </div>
         )}
-        <div ref={bottomRef} />
+        <div ref={scrollAnchorRef} />
       </div>
     </div>
   );
